@@ -1,0 +1,309 @@
+In your GitHub repo root, create this path:
+api/contact.js
+So the structure is:
+WebScalePH/
+├── index.html
+├── assets/
+├── api/
+│   └── contact.js   ← THIS FILE
+├── vercel.json
+└── ...
+STEP 2: COPY & PASTE THIS CODE (exactly)
+Paste this into api/contact.js:
+import { Resend } from "resend";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
+
+  const { name, email, message } = req.body;
+
+  if (!name || !email || !message) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  try {
+    await resend.emails.send({
+      from: process.env.CONTACT_FROM_EMAIL,
+      to: process.env.CONTACT_TO_EMAIL,
+      subject: `New WebScalePH Lead from ${name}`,
+      reply_to: email,
+      html: `
+        <h2>New Contact Form Submission</h2>
+        <p><strong>Name:</strong> ${name}</p>
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Message:</strong></p>
+        <p>${message}</p>
+      `
+    });
+
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Email failed to send" });
+  }
+}
+STEP 3: Commit & push
+git add api/contact.js
+git commit -m "Add contact form email API"
+git push
+Got you. I’ll walk you through this **exactly as clicks + copy-paste inside GitHub**, no terminal required. Assume you are doing this **in the GitHub web interface**.
+
+We’ll do this in **two paste actions**:
+
+1. Create `api/contact.js`
+2. Edit your HTML to wire the form
+
+---
+
+# PART 1 — CREATE `/api/contact.js` IN GITHUB (BACKEND)
+
+## STEP 1: Open your GitHub repository
+
+1. Go to **GitHub**
+2. Open your repo:
+   👉 `georgebakerofficial-wq / WebScalePH`
+3. You should see the file list (`index.html`, assets, etc.)
+
+---
+
+## STEP 2: Create the `api` folder
+
+1. Click **Add file**
+2. Click **Create new file**
+
+At the top where it says **Name your file**, type **exactly**:
+
+```
+api/contact.js
+```
+
+⚠️ This is important:
+
+* GitHub will automatically create the `api` folder
+* Then create `contact.js` inside it
+
+If you typed it correctly, you’ll see:
+
+```
+api / contact.js
+```
+
+---
+
+## STEP 3: Paste the backend code
+
+In the big editor area, **paste this EXACTLY** 👇
+
+```js
+import { Resend } from "resend";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
+
+  const { name, email, message } = req.body;
+
+  if (!name || !email || !message) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  try {
+    await resend.emails.send({
+      from: process.env.CONTACT_FROM_EMAIL,
+      to: process.env.CONTACT_TO_EMAIL,
+      subject: `New WebScalePH Lead from ${name}`,
+      reply_to: email,
+      html: `
+        <h2>New Contact Form Submission</h2>
+        <p><strong>Name:</strong> ${name}</p>
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Message:</strong></p>
+        <p>${message}</p>
+      `
+    });
+
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Email failed to send" });
+  }
+}
+```
+
+---
+
+## STEP 4: Save the file
+
+Scroll down to **Commit new file**:
+
+* Commit message:
+
+  ```
+  Add contact form API endpoint
+  ```
+* Click **Commit new file**
+
+✅ Backend is now created.
+
+---
+
+# PART 2 — CONNECT YOUR CONTACT FORM (FRONTEND)
+
+Now we wire your existing form to `/api/contact`.
+
+---
+
+## STEP 5: Open your HTML file
+
+1. In the repo file list, click **`index.html`**
+
+   * OR whatever file contains your contact form
+2. Click the **✏️ Edit (pencil)** icon
+
+---
+
+## STEP 6: Find your contact `<form>`
+
+Look for something like:
+
+```html
+<form>
+```
+
+or
+
+```html
+<form id="contact-form">
+```
+
+---
+
+## STEP 7: Make sure the form has an ID
+
+Change it to **exactly this**:
+
+```html
+<form id="contact-form">
+```
+
+❌ REMOVE any `action="..."` or `method="..."`
+
+---
+
+## STEP 8: Check input `name` attributes
+
+Your fields **must** look like this:
+
+```html
+<input type="text" name="name" />
+<input type="email" name="email" />
+<textarea name="message"></textarea>
+```
+
+⚠️ The `name="..."` values must match **exactly**.
+
+---
+
+## STEP 9: Paste the frontend script
+
+Scroll **ALL THE WAY DOWN** to just before:
+
+```html
+</body>
+```
+
+Paste this **above `</body>`** 👇
+
+```html
+<script>
+  const form = document.getElementById("contact-form");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const formData = new FormData(form);
+
+    const payload = {
+      name: formData.get("name"),
+      email: formData.get("email"),
+      message: formData.get("message")
+    };
+
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        alert("Message sent successfully!");
+        form.reset();
+      } else {
+        alert("Failed to send message. Please try again.");
+      }
+    } catch (error) {
+      alert("Something went wrong. Please try again later.");
+    }
+  });
+</script>
+```
+
+---
+
+## STEP 10: Save the HTML file
+
+Scroll down:
+
+* Commit message:
+
+  ```
+  Wire contact form to Vercel API
+  ```
+* Click **Commit changes**
+
+---
+
+# PART 3 — WHAT HAPPENS NEXT (IMPORTANT)
+
+* Vercel **auto-deploys**
+* Your endpoint becomes live at:
+
+  ```
+  https://your-site.vercel.app/api/contact
+  ```
+* Your form now sends emails via Resend
+
+---
+
+# FINAL TEST
+
+1. Open your live Vercel site
+2. Submit the contact form
+3. Open DevTools → Network
+4. You should see:
+
+   ```
+   POST /api/contact → 200
+   ```
+5. Check your inbox 🎉
+
+---
+
+## If anything fails, reply with ONE of these:
+
+* “404 /api/contact”
+* “500 error from API”
+* “Form submits but no email”
+* “Everything works 🎉”
+
+I’ll debug it immediately.
